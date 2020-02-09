@@ -3,6 +3,6 @@
 **.iml
 **/target
 
-**application.conf
+**secrets.conf
 
 **/__pycache__

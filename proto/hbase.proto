@@ -8,25 +8,64 @@ option java_outer_classname = "HBaseGRPCProto";
 
 package hbase;
 
+/* ==== Basic data model ==== */
+
+/* A table in HBase */
 message Table {
     string name = 1;
     string namespace = 2;
 }
 
-message Columns {
-    repeated string columns = 2;
+/* A column family */
+message Family {
+    string family = 1;
 }
 
-message Get {
+/* A fully specified column */
+message Column {
+    string family = 1;
+    string qualifier = 2;
+}
+
+/* Value in a cell with optional timestamp */
+message ValueVersion {
+    bytes value = 1;
+    google.protobuf.Int64Value timestamp = 2;
+}
+
+/* A column with a series of values */
+message ColumnValues {
+    Column column = 1;
+    repeated ValueVersion values = 2;
+}
+
+/* A fetch result for a row */
+message Result {
+    string row = 1;
+    repeated ColumnValues columns = 2;
+}
+
+/* Queries */
+
+/* A column or entire column family to include in a scan or get operation */
+message ColumnQuery {
+    oneof sealed_value {
+        Column column = 1;
+        Family family = 2;
+    }
+}
+
+message GetRequest {
     Table table = 1;
     string row = 2;
     google.protobuf.Int32Value max_versions = 3;
     google.protobuf.Int64Value min_time = 4;
     google.protobuf.Int64Value max_time = 5;
-    map<string, Columns> columns = 6;
+    repeated ColumnQuery columns = 6;
+    bool include_timestamp = 7;
 }
 
-message Scan {
+message ScanRequest {
     Table table = 1;
     google.protobuf.StringValue start_row = 2;
     google.protobuf.StringValue stop_row = 3;
@@ -34,23 +73,40 @@ message Scan {
     google.protobuf.Int32Value max_versions = 5;
     google.protobuf.Int64Value min_time = 6;
     google.protobuf.Int64Value max_time = 7;
-    map<string, Columns> columns = 8;
+    repeated ColumnQuery columns = 8;
+    bool include_timestamp = 9;
+    // TODO: filters
 }
 
-message Cell {
-    string row = 1;
-    string family = 2;
-    string qualifier = 3;
-    int64 timestamp = 4;
-    bytes value = 5;
+message PutRequest {
+    Table table = 1;
+    string row = 2;
+    repeated ColumnValues values = 3;
 }
 
-message Result {
-    repeated Cell cells = 1;
+/* Helper object for delete operations to specify a column to delete with an optional timestamp */
+message ColumnVersion {
+    Column column = 1;
+    google.protobuf.Int64Value timestamp = 2;
 }
+
+message DeleteRequest {
+    Table table = 1;
+    string row = 2;
+    bool single_version = 3;
+    repeated ColumnVersion columns = 4;
+}
+
+/* Service */
+
+message OK {}
 
 service HBaseService {
-    rpc get (Get) returns (stream Cell) {}
+    rpc Get (GetRequest) returns (Result) {}
 
-    rpc scan (Scan) returns (stream Cell) {}
+    rpc Scan (ScanRequest) returns (stream Result) {}
+
+    rpc Delete (DeleteRequest) returns (OK) {}
+
+    rpc Put (PutRequest) returns (OK) {}
 }

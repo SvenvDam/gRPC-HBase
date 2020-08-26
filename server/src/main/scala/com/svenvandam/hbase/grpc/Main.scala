@@ -15,12 +15,7 @@ object Main {
 
     val appConf = ApplicationConfig.load()
 
-    val hbaseExecutionContext =
-      ExecutionContext
-        .fromExecutor(
-          Executors
-            .newFixedThreadPool(appConf.hBase.requestParallelism)
-        )
+    val hbaseExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
     val hBaseConn = HBase.getConnection(appConf.hBase)
 

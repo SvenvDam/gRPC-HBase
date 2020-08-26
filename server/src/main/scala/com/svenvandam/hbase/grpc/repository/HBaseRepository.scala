@@ -2,8 +2,8 @@ package com.svenvandam.hbase.grpc.repository
 
 import com.svenvandam.hbase.grpc.proto.Table
 import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.{ResultScanner, Get, Connection, Result, Scan}
-import scala.concurrent.{Future, blocking, ExecutionContext}
+import org.apache.hadoop.hbase.client._
+import scala.concurrent.{blocking, ExecutionContext, Future}
 
 class HBaseRepository(conn: Connection, context: ExecutionContext) {
   implicit val ec = context
@@ -20,4 +20,15 @@ class HBaseRepository(conn: Connection, context: ExecutionContext) {
     }
   }
 
+  def put(put: Put, table: Table): Future[Unit] = Future {
+    blocking {
+      conn.getTable(TableName.valueOf(table.namespace, table.name)).put(put)
+    }
+  }
+
+  def delete(delete: Delete, table: Table): Future[Unit] = Future {
+    blocking {
+      conn.getTable(TableName.valueOf(table.namespace, table.name)).delete(delete)
+    }
+  }
 }

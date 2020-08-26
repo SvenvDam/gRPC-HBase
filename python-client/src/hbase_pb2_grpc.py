@@ -14,15 +14,25 @@ class HBaseServiceStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.get = channel.unary_stream(
-        '/hbase.HBaseService/get',
-        request_serializer=hbase__pb2.Get.SerializeToString,
-        response_deserializer=hbase__pb2.Cell.FromString,
+    self.Get = channel.unary_unary(
+        '/hbase.HBaseService/Get',
+        request_serializer=hbase__pb2.GetRequest.SerializeToString,
+        response_deserializer=hbase__pb2.Result.FromString,
         )
-    self.scan = channel.unary_stream(
-        '/hbase.HBaseService/scan',
-        request_serializer=hbase__pb2.Scan.SerializeToString,
-        response_deserializer=hbase__pb2.Cell.FromString,
+    self.Scan = channel.unary_stream(
+        '/hbase.HBaseService/Scan',
+        request_serializer=hbase__pb2.ScanRequest.SerializeToString,
+        response_deserializer=hbase__pb2.Result.FromString,
+        )
+    self.Delete = channel.unary_unary(
+        '/hbase.HBaseService/Delete',
+        request_serializer=hbase__pb2.DeleteRequest.SerializeToString,
+        response_deserializer=hbase__pb2.OK.FromString,
+        )
+    self.Put = channel.unary_unary(
+        '/hbase.HBaseService/Put',
+        request_serializer=hbase__pb2.PutRequest.SerializeToString,
+        response_deserializer=hbase__pb2.OK.FromString,
         )
 
 
@@ -30,14 +40,28 @@ class HBaseServiceServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def get(self, request, context):
+  def Get(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def scan(self, request, context):
+  def Scan(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def Delete(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def Put(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -47,15 +71,25 @@ class HBaseServiceServicer(object):
 
 def add_HBaseServiceServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'get': grpc.unary_stream_rpc_method_handler(
-          servicer.get,
-          request_deserializer=hbase__pb2.Get.FromString,
-          response_serializer=hbase__pb2.Cell.SerializeToString,
+      'Get': grpc.unary_unary_rpc_method_handler(
+          servicer.Get,
+          request_deserializer=hbase__pb2.GetRequest.FromString,
+          response_serializer=hbase__pb2.Result.SerializeToString,
       ),
-      'scan': grpc.unary_stream_rpc_method_handler(
-          servicer.scan,
-          request_deserializer=hbase__pb2.Scan.FromString,
-          response_serializer=hbase__pb2.Cell.SerializeToString,
+      'Scan': grpc.unary_stream_rpc_method_handler(
+          servicer.Scan,
+          request_deserializer=hbase__pb2.ScanRequest.FromString,
+          response_serializer=hbase__pb2.Result.SerializeToString,
+      ),
+      'Delete': grpc.unary_unary_rpc_method_handler(
+          servicer.Delete,
+          request_deserializer=hbase__pb2.DeleteRequest.FromString,
+          response_serializer=hbase__pb2.OK.SerializeToString,
+      ),
+      'Put': grpc.unary_unary_rpc_method_handler(
+          servicer.Put,
+          request_deserializer=hbase__pb2.PutRequest.FromString,
+          response_serializer=hbase__pb2.OK.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

@@ -7,7 +7,6 @@ case class ApplicationConfig(hBase: HBaseConfig, http: HttpConfig)
 case class HBaseConfig(zookeeperHost: String,
                        zookeeperPort: Int,
                        zNodeParent: String,
-                       requestParallelism: Int,
                        kerberos: Option[KerberosConfig])
 
 case class KerberosConfig(
@@ -39,7 +38,6 @@ object ApplicationConfig {
         config.getString("hbase.zookeeper-host"),
         config.getInt("hbase.zookeeper-port"),
         config.getString("hbase.znode-parent"),
-        config.getInt("hbase.request-paralellism"),
         kerberosConfig
       ),
       HttpConfig(config.getString("http.host"), config.getInt("http.port"))

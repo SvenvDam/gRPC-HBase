@@ -1,10 +1,9 @@
-from typing import Mapping, List, Optional
+from typing import Mapping, List, Optional, Iterator
 
 import grpc
 from google.protobuf.wrappers_pb2 import Int32Value, StringValue, Int64Value
-from hbase_pb2 import Get, Columns, Table, Scan
+from hbase_pb2 import ScanRequest, Table, GetRequest, ColumnQuery, Column, Result
 from hbase_pb2_grpc import HBaseServiceStub
-from result import Result
 
 
 class Client:
@@ -20,7 +19,7 @@ class Client:
             row: str,
             table_name: str,
             table_namespace: str = "default",
-            columns: Mapping[str, List[str]] = None,
+            columns: Optional[Mapping[str, List[str]]] = None,
             min_time: Optional[int] = None,
             max_time: Optional[int] = None,
             max_versions: Optional[int] = None
@@ -40,16 +39,21 @@ class Client:
         else:
             _max_versions = Int32Value()
 
-        query = Get(
+        if columns is not None:
+            _columns = self._convert_columns(columns)
+        else:
+            _columns = []
+
+        query = GetRequest(
             table=Table(name=table_name, namespace=table_namespace),
             row=row,
-            columns={f: Columns(columns=c) for f, c in columns.items()},
+            columns=_columns,
             max_versions=_max_versions,
             min_time=_min_time,
             max_time=_max_time
         )
 
-        return Result(self._client.get(query))
+        return self._client.Get(query)
 
     def scan(
             self,
@@ -58,11 +62,11 @@ class Client:
             start_row: Optional[str] = None,
             stop_row: Optional[str] = None,
             prefix: Optional[str] = None,
-            columns: Mapping[str, List[str]] = None,
+            columns: Optional[Mapping[str, List[str]]] = None,
             min_time: Optional[int] = None,
             max_time: Optional[int] = None,
             max_versions: Optional[int] = None
-    ) -> 'Result':
+    ) -> Iterator[Result]:
 
         if start_row is not None:
             _start_row = StringValue(value=start_row)
@@ -89,20 +93,44 @@ class Client:
         else:
             _max_time = None
 
+        if columns is not None:
+            _columns = self._convert_columns(columns)
+        else:
+            _columns = []
+
         if max_versions is not None:
             _max_versions = Int32Value(value=max_versions)
         else:
             _max_versions = None
 
-        query = Scan(
+        query = ScanRequest(
             table=Table(name=table_name, namespace=table_namespace),
             start_row=_start_row,
             stop_row=_stop_row,
             prefix=_prefix,
-            columns={f: Columns(columns=c) for f, c in columns.items()},
+            columns=_columns,
             min_time=_min_time,
             max_time=_max_time,
             max_versions=_max_versions
         )
 
-        return Result(self._client.scan(query))
+        return self._client.Scan(query)
+
+    def _convert_columns(self, columns: Mapping[str, List[str]]) -> List[ColumnQuery]:
+        return [q for fam, quals in columns.items() for q in self._get_column_queries(fam, quals)]
+
+    def _get_column_queries(self, family: str, qualifiers: List[str]) -> List[ColumnQuery]:
+        if not qualifiers:
+            return [self._get_column_query(family, None)]
+        else:
+            return [self._get_column_query(family, q) for q in qualifiers]
+
+    @staticmethod
+    def _get_column_query(family: str, qualifier: Optional[str]) -> ColumnQuery:
+        query = ColumnQuery()
+        if qualifier:
+            query.column = Column(family=family, qualifier=qualifier)
+        else:
+            query.family = family
+
+        return query
